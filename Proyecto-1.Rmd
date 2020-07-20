@@ -32,17 +32,21 @@ output:
 * Si lo que se desea es evitar futuros accidentes, no basta con únicamente presentar la zona del hecho. El tener la latitud y longitud podría indicar la dirección del hecho, y podrían evaluarse (dependiendo del tipo de accidente), si se realizan proyectos como colocación de semáforos, ampliamiento de carriles, señalizaciones, pasarelas, etc.
 * Códigos correspondientes al color de vehículo no tienen ningún tipo de orden. Hay colores que podrían quedar a discresión de quien registra (¿qué distingue a un carro marfil de un carro blanco, por ejemplo, es necesario tener tres distintos tonos de azul (azul, celeste y turquesa)?). TODO: ¿Puede ser por frecuencia?
 * Demasiadas categorías de tipo de vehículo, sin ningún orden aparente.
+* Demasiadas variables para guardar las edades de los involucrados, cuando es suficiente el campo de edad. En últimas, hacer divisiones que tengan un poco más de sentido: por ejemplo, el Road Safety Database del International Traffic Safety Data and Analysis Group (IRTAD) divide las edades en menores de 16, de 16 a 20 y mayores de 20, lo cual correspondería a menores de edad que no tienen licencia, menores que ya podrían tener licencia y legalmente mayores de edad (https://www.itf-oecd.org/irtad-road-safety-database); ajustando la data al las leyes de Guatemala, podrían ser las clasificaciones de menores de 16, de 16 a 18 y mayores de 18, pero nuevamente cabe recalcar que no sería necesario el recopilar estas en sí, ya que puede obtenerse de el campo de edad.
 * ¿En qué punto un derrape puede considerarse un tipo de accidente, o es más una causa de accidente? Dado esto, ¿debería existir un apartado de "causa del evento" (donde podrían ir aquellas categorías mencionadas de 2017)?
 
 Como nota, se encontraron las siguientes definiciones en el sitio del INE, algunas de las cuales se discutieron en clase:
 ![](Assets/DefinicionesINE.PNG){width=750px}
 
+Estas deberían agregarse a los diccionarios de términos, y no dar por sentado que quien descargue las bases de datos las leerá o encontrará.
+
 #### Vehículos involucrados/Hechos de tránsito
 * No hay manera de saber qué vehículos estuvieron involucrados en el mismo hecho de tránsito. De la misma manera, un hecho de tránsito no indica la cantidad de vehículos involucrados. TODO: Verificar esto, y si es de interés.
 
 #### Fallecidos y lesionados
-* Actualmente, no se distingue entre si la persona en cuestión fue el conductor, pasajero o un peatón, es decir, si hubo atropellados, a pesar de que esto se encuentra en la ficha técnica provista por el INE.
-* Indicar si el conductor y/o pasajeros llevaba medidas de protección (cinturón o casco). Estos mismos deberían incluir un campo de "No aplica" (por ejemplo, las motos no llevan cinturón, conductores de autos no usan cascos), diferente del "Ignorado".
+* Actualmente, no se distingue entre si la persona en cuestión fue el conductor, pasajero o un peatón, es decir, si hubo atropellados, a pesar de que esto se encuentra en la ficha técnica provista por el INE. Estas son distinciones utilizadas por el IRTAD y por el National Highway Traffic Safety Administration (NHTSA) (https://cdan.nhtsa.gov/STSI.htm#).
+* Indicar si el conductor y/o pasajeros llevaba medidas de protección (cinturón o casco). Estos mismos deberían incluir un campo de "No aplica" (por ejemplo, las motos no llevan cinturón, conductores de autos no usan cascos), diferente del "Ignorado". Estos dos son también variables contempladas por el IRTAD, mientras que el cinturón también lo toma en cuenta el NHTSA.
+* La NHTSA también evalúa los fallecimientos relacionados con la velocidad del vehículo, lo que nos regresa a la pregunta de si debería tenerse un apartado de causa de accidente (como velocidad, piso mojado, niebla). Esto también es un campo que puede verse formularios de aseguradoras.
 
 #### Dudas que podrían resolverse al mejorar el diccionario de datos
 * ¿Por qué y en base a qué criterio se hacen los rangos y agrupaciones de horas y edades de la INE?
@@ -109,8 +113,8 @@ fal_les$g_hora_5 = NULL
 fal_les <- merge(merge(merge(merge(merge(merge(merge(fal_les, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8")) %>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
 ```
 
-```{r warning=FALSE, error=FALSE, message=FALSE}
-ggplot(hechos, aes(x=evento, fill=año_ocu)) + geom_bar() + coord_flip()
+```{r error=FALSE, message=FALSE, warning=FALSE}
+ggplot(hechos, aes(x=evento)) + geom_bar() + coord_flip() + facet_grid(año_ocu~.)
 ```
 
 ¿Qué municipios tienen más instancias de ignorados respecto a zonas?
@@ -144,9 +148,3 @@ fal_les %>% filter(evento=="Atropello", modelo_veh==9999, tipo_veh==99, color_ve
 
 Parece haber un número incluso más alto de fallecidos y lesionados por atropellos en los que no se registra información alguna del vehículo. ¿Podrían ser estos peatones?
 
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
