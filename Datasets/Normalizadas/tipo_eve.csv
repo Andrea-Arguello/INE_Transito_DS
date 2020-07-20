@@ -1,0 +1,10 @@
+tipo_eve,evento
+1,Colisión
+2,Choque
+3,Vuelco
+4,Caída
+5,Atropello
+6,Derrape
+7,Embarranco
+8,Encuneto
+99,Ignorado

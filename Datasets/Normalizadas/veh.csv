@@ -1,0 +1,25 @@
+tipo_veh,veh
+1,Automóvil
+2,Camioneta sport o blazer
+3,Pick up
+4,Motocicleta
+5,Camión
+6,Cabezal
+7,Bus extraurbano
+8,Jeep
+9,Microbús
+10,Taxi
+11,Panel
+12,Bus urbano
+13,Tractor
+14,Moto taxi
+15,Furgón
+16,Grúa
+17,Bus escolar
+18,Bicicleta
+19,Avioneta
+20,Montacargas
+21,Bus militar
+22,Cuatrimoto
+23,Furgoneta
+99,Ignorado

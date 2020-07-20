@@ -1,0 +1,14 @@
+tipo_eve,evento
+1,Colisión
+2,Choque
+3,Vuelco
+4,Caída
+5,Atropello
+6,Perdida de control
+7,Colisión contra animal
+8,Exceso de pasaje
+9,Asfalto mojado
+10,Exceso de velocidad
+11,Desperfectos mecánicos
+12,Incendio
+99,Ignorado

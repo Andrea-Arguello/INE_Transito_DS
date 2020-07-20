@@ -5,14 +5,145 @@ output:
     df_print: paged
 ---
 
-```{r}
+# Análisis realizado con base en únicamente los diccionarios
+## Cambios recientes 
+### Comparación de diccionarios de 2018-2019 con diccionarios de 2017
+#### Mejoras
+##### Generales
+* Diccionario de 2018-2019 menciona al lector cambios relevantes con respecto a 2017
+* Diccionarios de 2017 no incluyen el nombre de la columna en la base de datos, solo la representación de la variable, lo cual se agregó para el de 2018.
+* Se cambió el código de rango de modelo de vehículo de ignorado (6 a 99), una mejor práctica para la imputación de datos, ya que, pareciendo que el intervalo son 10 años, el 6 sería necesario utilizarlo a partir de este año.
+* Se redujo la cantidad de tipos de evento, ya que en 2017 las categorías incluían un repertorio de categorías confusas, o que bien podrían contar como causas de otra de las categorías, por ejemplo:
+  + Pérdida de control
+  + Colisisón contra animal
+  + Exceso de pasaje
+  + Asfalto mojado
+  + Exceso de velocidad
+  + Desperfectos mecánicos
+  + Incendio
+
+### Oportunidades de mejora de diccionarios actuales
+#### Generales
+* No se mencionan todos los cambios con respecto al diccionario de 2017, por ejemplo:
+  + 2018 agrega Furgoneta a tipos de vehículo
+  + 2018 agrega "Varios colores" y quita "Aqua" de colores de vehículo
+  + 2018 cambia categorías de estado del conductor, que solían ser "Normal", "Bajo influencia de alcohol", "Drogado" e "Ignorado" por "No ebrio", "Ebrio" e "Ignorado"
+  + diccionario de fallecidos y lesionados agrega en 2018 la categoría de "Ignorado" para la etiqueta de "Internado o no internado"
+* Si lo que se desea es evitar futuros accidentes, no basta con únicamente presentar la zona del hecho. El tener la latitud y longitud podría indicar la dirección del hecho, y podrían evaluarse (dependiendo del tipo de accidente), si se realizan proyectos como colocación de semáforos, ampliamiento de carriles, señalizaciones, pasarelas, etc.
+* Códigos correspondientes al color de vehículo no tienen ningún tipo de orden. Hay colores que podrían quedar a discresión de quien registra (¿qué distingue a un carro marfil de un carro blanco, por ejemplo, es necesario tener tres distintos tonos de azul (azul, celeste y turquesa)?). TODO: ¿Puede ser por frecuencia?
+* Demasiadas categorías de tipo de vehículo, sin ningún orden aparente.
+* ¿En qué punto un derrape puede considerarse un tipo de accidente, o es más una causa de accidente? Dado esto, ¿debería existir un apartado de "causa del evento" (donde podrían ir aquellas categorías mencionadas de 2017)?
+
+Como nota, se encontraron las siguientes definiciones en el sitio del INE, algunas de las cuales se discutieron en clase:
+![](Assets/DefinicionesINE.PNG){width=750px}
+
+#### Vehículos involucrados/Hechos de tránsito
+* No hay manera de saber qué vehículos estuvieron involucrados en el mismo hecho de tránsito. De la misma manera, un hecho de tránsito no indica la cantidad de vehículos involucrados. TODO: Verificar esto, y si es de interés.
+
+#### Fallecidos y lesionados
+* Actualmente, no se distingue entre si la persona en cuestión fue el conductor, pasajero o un peatón, es decir, si hubo atropellados, a pesar de que esto se encuentra en la ficha técnica provista por el INE.
+* Indicar si el conductor y/o pasajeros llevaba medidas de protección (cinturón o casco). Estos mismos deberían incluir un campo de "No aplica" (por ejemplo, las motos no llevan cinturón, conductores de autos no usan cascos), diferente del "Ignorado".
+
+#### Dudas que podrían resolverse al mejorar el diccionario de datos
+* ¿Por qué y en base a qué criterio se hacen los rangos y agrupaciones de horas y edades de la INE?
+* ¿Por qué se redujeron las categorías de Estado del conductor? ¿Comprende "ebrio" el estar bajo influencia de cualquier sustancia, o únicamente alcohol?
+* ¿Cuál es la razón por que se incluyan rangos de edades? ¿Tienen algún fundamento estadístico? De lo contrario, estas únicamente tienen más pesados
+
+# Análisis exploratorio
+```{r warning=FALSE, error=FALSE, message=FALSE}
 library(readxl)
 library(tidyverse)
 ```
 
-```{r}
-hechos <- read_excel("./Datasets/Hechos_de_transito.xlsx")
+## Cargar bases de datos
+```{r warning=FALSE, error=FALSE, message=FALSE}
+hechos_2019 <- read_excel("./Datasets/Hechos_de_transito_2019.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep="")) # Para poder hacer joins, les agregaremos esta columna
+hechos_2018 <- read_excel("./Datasets/Hechos_de_transito_2018.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep=""))
+
+hechos <- rbind(hechos_2019,hechos_2018)
+
+# Variables que no nos sirven porque pueden deducirse con otras o no dicen nada
+hechos$g_hora = NULL
+hechos$marca_veh = NULL
+hechos$g_modelo_veh = NULL
+hechos$g_hora_5 = NULL
+
+
+hechos <- merge(merge(merge(merge(merge(merge(merge(hechos, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8"))%>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
+
+hechos$año_ocu <-  as.factor(hechos$año_ocu)
+hechos$mupio_name <-  as.factor(hechos$mupio_name)
+
+vehiculos_2019 <- read_excel("./Datasets/Vehiculos_involucrados_2019.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep="")) # Para poder hacer joins, les agregaremos esta columna
+vehiculos_2018 <- read_excel("./Datasets/Vehiculos_involucrados_2018.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep=""))
+
+vehiculos <- rbind(vehiculos_2019,vehiculos_2018)
+
+# Variables que no nos sirven porque pueden deducirse con otras o no dicen nada
+vehiculos$g_hora = NULL
+vehiculos$marca_veh = NULL
+vehiculos$g_modelo_veh = NULL
+vehiculos$g_edad_80ymás = NULL
+vehiculos$g_edad_60ymás = NULL
+vehiculos$edad_quinquenales = NULL
+vehiculos$g_hora_5 = NULL
+
+vehiculos <- merge(merge(merge(merge(merge(merge(merge(vehiculos, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8")) %>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
+
+vehiculos$año_ocu <-  as.factor(vehiculos$año_ocu)
+vehiculos$mupio_name <-  as.factor(vehiculos$mupio_name)
+
+fal_les_2019 <- read_excel("./Datasets/Fallecidos_y_lesionados_2019.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep="")) # Para poder hacer joins, les agregaremos esta columna
+fal_les_2018 <- read_excel("./Datasets/Fallecidos_y_lesionados_2018.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep=""))
+
+fal_les <- rbind(fal_les_2019,fal_les_2018)
+
+fal_les$g_hora = NULL
+fal_les$marca_veh = NULL
+fal_les$g_modelo_veh = NULL
+fal_les$g_edad_80ymás = NULL
+fal_les$g_edad_60ymás = NULL
+fal_les$edad_quinquenales = NULL
+fal_les$g_hora_5 = NULL
+
+fal_les <- merge(merge(merge(merge(merge(merge(merge(fal_les, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8")) %>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
 ```
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+ggplot(hechos, aes(x=evento, fill=año_ocu)) + geom_bar() + coord_flip()
+```
+
+¿Qué municipios tienen más instancias de ignorados respecto a zonas?
+```{r warning=FALSE, error=FALSE, message=FALSE}
+hechos %>% filter(zona_ocu==99) %>% add_count(mupio_name, año_ocu) %>% select(mupio_name, año_ocu, n) %>% distinct() %>% arrange(desc(n))
+```
+
+Esto podría indicar deficiencias en cómo recopila información la PNC en esos municipios, ya que no hace sentido el ignorar en qué zona ocurrió el hecho. Además, ¿coinciden estos con los departamentos que registran más modelos de vehículos ignorados?
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+hechos %>% filter(modelo_veh==9999) %>% select(mupio_name,año_ocu) %>% group_by(mupio_name,año_ocu) %>% mutate(count = n()) %>% distinct() %>% arrange(desc(count))
+```
+Se puede observar que Guatemala es la que más casos de modelo de vehículo ignorado registra, seguido por Mixco y Villa Nueva. Sin embargo, Guatemala sólo tuvo más de 100 instancias de zona ignorada en 2018, teniendo únicamente 4 en 2019.
+
+¿Existen casos en que todas las variables relacionadas a vehículos sean ignoradas? De ser así, ¿coincidirán estas con víctimas de atropellos?
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+sin_info_veh <- hechos %>% filter(modelo_veh==9999, tipo_veh==99, color_veh==99)
+sin_info_veh %>% count()
+```
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+sin_info_veh %>% select(evento) %>% add_count(evento) %>% group_by(evento) %>% distinct()
+```
+
+Se puede observar que la mayoría de hechos en los que se ignora toda la información que concierne al vehículo son atropellos. ¿Por qué es esto? Los que no tienen que ver con atropellos pueden tomarse como error, o se podría especular que son vehículos que espacaron del lugar del accidente.
+
+```{r}
+fal_les %>% filter(evento=="Atropello", modelo_veh==9999, tipo_veh==99, color_veh==99) %>% count()
+```
+
+Parece haber un número incluso más alto de fallecidos y lesionados por atropellos en los que no se registra información alguna del vehículo. ¿Podrían ser estos peatones?
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
