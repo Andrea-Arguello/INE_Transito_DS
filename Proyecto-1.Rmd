@@ -44,7 +44,8 @@ Estas deberían agregarse a los diccionarios de términos, y no dar por sentado 
 * No hay manera de saber qué vehículos estuvieron involucrados en el mismo hecho de tránsito. De la misma manera, un hecho de tránsito no indica la cantidad de vehículos involucrados. TODO: Verificar esto, y si es de interés.
 
 #### Fallecidos y lesionados
-* Actualmente, no se distingue entre si la persona en cuestión fue el conductor, pasajero o un peatón, es decir, si hubo atropellados, a pesar de que esto se encuentra en la ficha técnica provista por el INE. Estas son distinciones utilizadas por el IRTAD y por el National Highway Traffic Safety Administration (NHTSA) (https://cdan.nhtsa.gov/STSI.htm#).
+* Actualmente, no se distingue entre si la persona en cuestión fue el conductor, pasajero o un peatón, es decir, si hubo atropellados, a pesar de que esto se encuentra en la ficha técnica provista por el INE. Estas son distinciones utilizadas por el IRTAD y por el National Highway Traffic Safety Administration (NHTSA) (https://cdan.nhtsa.gov/STSI.htm#). No solo la siguiente información no es correcta, sino que añade la incógnita, ¿cómo se sabe si uno de los atropellados falleció o no?
+![](Assets/FasesINE.PNG){width=450px}
 * Indicar si el conductor y/o pasajeros llevaba medidas de protección (cinturón o casco). Estos mismos deberían incluir un campo de "No aplica" (por ejemplo, las motos no llevan cinturón, conductores de autos no usan cascos), diferente del "Ignorado". Estos dos son también variables contempladas por el IRTAD, mientras que el cinturón también lo toma en cuenta el NHTSA.
 * La NHTSA también evalúa los fallecimientos relacionados con la velocidad del vehículo, lo que nos regresa a la pregunta de si debería tenerse un apartado de causa de accidente (como velocidad, piso mojado, niebla). Esto también es un campo que puede verse formularios de aseguradoras.
 
@@ -96,6 +97,7 @@ vehiculos <- merge(merge(merge(merge(merge(merge(merge(vehiculos, read.csv("./Da
 
 vehiculos$año_ocu <-  as.factor(vehiculos$año_ocu)
 vehiculos$mupio_name <-  as.factor(vehiculos$mupio_name)
+vehiculos$veh <-  as.factor(vehiculos$veh)
 
 fal_les_2019 <- read_excel("./Datasets/Fallecidos_y_lesionados_2019.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep="")) # Para poder hacer joins, les agregaremos esta columna
 fal_les_2018 <- read_excel("./Datasets/Fallecidos_y_lesionados_2018.xlsx") %>% mutate(nuevo_num = paste(`núm_corre`,`año_ocu`,sep=""))
@@ -110,7 +112,13 @@ fal_les$g_edad_60ymás = NULL
 fal_les$edad_quinquenales = NULL
 fal_les$g_hora_5 = NULL
 
-fal_les <- merge(merge(merge(merge(merge(merge(merge(fal_les, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8")) %>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
+fal_les <- merge(merge(merge(merge(merge(merge(merge(merge(fal_les, read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/deptos_code_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/tipo_eve.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/dia.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/mes_ocu.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/municipios_g.csv", encoding="UTF-8")),read.csv("./Datasets/Normalizadas/veh.csv", encoding="UTF-8")), read.csv("./Datasets/Normalizadas/fal_les.csv", encoding="UTF-8")) %>% filter(tipo_eve<99) # No queremos eventos ignorados, ya que no nos sirve de nada
+
+fal_les$año_ocu <-  as.factor(fal_les$año_ocu)
+fal_les$mupio_name <-  as.factor(fal_les$mupio_name)
+fal_les$veh <-  as.factor(fal_les$veh)
+fal_les$fal_les_n <-  as.factor(fal_les$fal_les_n)
+
 ```
 
 ```{r error=FALSE, message=FALSE, warning=FALSE}
@@ -142,9 +150,85 @@ sin_info_veh %>% select(evento) %>% add_count(evento) %>% group_by(evento) %>% d
 
 Se puede observar que la mayoría de hechos en los que se ignora toda la información que concierne al vehículo son atropellos. ¿Por qué es esto? Los que no tienen que ver con atropellos pueden tomarse como error, o se podría especular que son vehículos que espacaron del lugar del accidente.
 
-```{r}
+```{r warning=FALSE, error=FALSE, message=FALSE}
 fal_les %>% filter(evento=="Atropello", modelo_veh==9999, tipo_veh==99, color_veh==99) %>% count()
 ```
 
-Parece haber un número incluso más alto de fallecidos y lesionados por atropellos en los que no se registra información alguna del vehículo. ¿Podrían ser estos peatones?
+Parece haber un número incluso más alto de fallecidos y lesionados por atropellos en los que no se registra información alguna del vehículo. ¿Podrían ser estos peatones? ¿Por qué no existe entonces esta categoría?
 
+¿Cuáles son los tipos de vehículos más frecuentes? ¿Hay alguno que no tenga registro?
+```{r warning=FALSE, error=FALSE, message=FALSE}
+vehiculos %>% select(veh) %>% add_count(veh) %>% group_by(veh) %>% distinct()
+```
+
+¿La estructura actual nos permite saber qué vehículos y qué lesionados/fallecidos están relacionados a cada hecho? ¿Por qué el hecho además, guarda información del vehículo? ¿Entonces, cada vehículo cuenta como un hecho? Averigüemoslo...
+
+1. ¿Existe más de una entrada en "hechos" que ocurra el mismo día, en el mismo lugar?
+El siguiente número nos indica la cantidad de hechos que hay, únicamente se han seleccionado las columnas correspondientes a la pregunta planteada. Se excluyen las zonas ignoradas. Excluimos el número de correlativo, ya que ninguna otra base de datos hace referencia a este.
+```{r warning=FALSE, error=FALSE, message=FALSE}
+hechos %>% select(año_ocu, mes_ocu, día_ocu, hora_ocu, mupio_ocu, zona_ocu, tipo_eve) %>% filter(zona_ocu != 99) %>% count()
+```
+De más de 13 mil entradas en la base de datos de hechos, esta se reduce a 3 mil solo con eliminar zonas de ocurrencia ignoradas.
+
+Ahora, siguiente número nos indica la cantidad de entradas con las columnas anteriormente mencionadas únicas que hay. Si se registra a cada vehículo del hecho (lo cual sería un mal diseño), debería ser menor a la cantidad anterior.
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+hechos %>% select(año_ocu, mes_ocu, día_ocu, hora_ocu, mupio_ocu, zona_ocu, tipo_eve) %>% filter(zona_ocu != 99) %>% distinct() %>% count()
+```
+
+Sin embargo, dado que la hora únicamente registra, valga la redundancia, la hora del día a la que ocurrió el accidente, y lo más cercano que tenemos es la zona, esta información no puede decirnos si esos 29 errores son hechos duplicados, o si son accidentes que ocurrieron en la misma zona, a la misma "hora" del día, pero no exactamente en el minuto exacto. ¿Valdría entonces la pena, incluir un campo de minutos? Considero que no, ya que esto solo nos serviría como medida preventiva para evitar hechos duplicados, que si se incluyera la latitud y longitud del hecho, no sería necesario. Incluso, si cada base de datos tuviese una columna de "hec_corr" que fuese el número de correlativo del hecho al que se relaciona, sería mucho más fácil.
+
+Y entonces, ¿cuántos vehículos involucrados hay? La cantidad debería ser mayor a la de hechos, revisemos:
+```{r warning=FALSE, error=FALSE, message=FALSE}
+vehiculos %>% filter(zona_ocu != 99) %>% count()
+```
+
+Algo aquí llama la atención. Volvamos a realizar la gráfica de frecuencia de eventos, sin incluir zonas ignoradas.
+```{r error=FALSE, message=FALSE, warning=FALSE}
+hechos %>% filter(zona_ocu != 99) %>% select(evento) %>% add_count(evento) %>% group_by(evento) %>% distinct() %>% arrange(desc(n))
+```
+La INE describe una colisión como un "impacto de dos cuerpos en movimiento." Podría asumirse que esto implica que al menos hayan dos vehículos involucrados. De los 3025 hechos, entonces podemos asumir que hay otros 1625 carros involucrados (esto es, asumiendo que todas las colisiones fueron contra lo que la INE calificaría como "vehículo," ya que bien podrían incluirse incluso algunos choques, pensando en las veces que alguien golpea a un carro estacionado). Esto parece hacer sentido, ya que puede observarse que la cantidad de vehículos involucrados es incluso mayor a los 3025+1625=4650 asumidos.
+
+Pero entonces, ¿por qué la INE registra el dato de uno de los vehículos involucrados por hecho?
+
+Debido a que actualmente, si se cuentan con columnas que repiten año, mes, día, hora, municipio, zona y tipo de evento, no es posible relacionar los vehículos con un solo evento. Si intentamos hacer este merge, se verá que terminamos teniendo más filas que las correspondientes a los vehículos involucrados, lo cual no es posible. Nótese:
+```{r error=FALSE, message=FALSE, warning=FALSE}
+vehiculos_y_hechos <- merge(hechos %>% select(año_ocu, mes_ocu, día_ocu, hora_ocu, mupio_ocu, zona_ocu, tipo_eve) %>% filter(zona_ocu != 99), vehiculos %>% filter(zona_ocu != 99))
+vehiculos_y_hechos %>% count()
+```
+
+4800 > 4709, hay 91 nuevas filas, por lo cual se tendríamos que excluir todas las instancias de hechos que repiten año, mes, día, hora, municipio, zona y tipo de evento.
+
+```{r error=FALSE, message=FALSE, warning=FALSE}
+all_just_hechos <- hechos %>% select(año_ocu, mes_ocu, día_ocu, hora_ocu, mupio_ocu, zona_ocu, tipo_eve) %>% filter(zona_ocu != 99)
+
+hechos_to_delete <- rev(which(duplicated(all_just_hechos) | duplicated(all_just_hechos, fromLast = TRUE)))
+
+just_hechos_clean <- all_just_hechos
+  
+for(i in hechos_to_delete){
+  just_hechos_clean <- just_hechos_clean[-i,]
+}
+
+vehiculos_y_hechos_clean <- merge(just_hechos_clean, vehiculos %>% select(-c("núm_corre","nuevo_num")) %>% filter(zona_ocu != 99))
+vehiculos_y_hechos_clean %>% count()
+```
+Ya que tenemos los hechos limpios, intentemos relacionar vehiculos y hechos con fallecidos y lesionados. Para esto, tendremos que renombrar algunas variables...
+Solo para saber cuántos fallecidos y lesionados tenemos todavía:
+```{r error=FALSE, message=FALSE, warning=FALSE}
+fal_les %>% filter(zona_ocu!=99) %>% count()
+```
+
+
+```{r error=FALSE, message=FALSE, warning=FALSE}
+v_y_h_names <- colnames(vehiculos_y_hechos_clean)
+v_y_h_names[12] <- "sexo_con" # sexo del conductor
+v_y_h_names[13] <- "edad_con" # sexo del conductor
+v_y_h_names[15] <- "mayor_menor_con" # sexo del conductor
+colnames(vehiculos_y_hechos_clean) <- v_y_h_names
+
+veh_hec_fal_les <- merge(vehiculos_y_hechos_clean, fal_les, all.x=T)
+veh_hec_fal_les %>% count()
+```
+
+Hemos terminado con únicamente 5283 datos que son posibles analizar, y esto ha sido el solo excluyendo zonas clasificadas como ignoraas, y hechos distinguibles con respecto a año, mes, día, hora, municipio, zona y tipo de evento.
