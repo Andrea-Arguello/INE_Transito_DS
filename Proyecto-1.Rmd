@@ -125,6 +125,16 @@ fal_les$fal_les_n <-  as.factor(fal_les$fal_les_n)
 ggplot(hechos, aes(x=evento)) + geom_bar() + coord_flip() + facet_grid(año_ocu~.)
 ```
 
+¿Verdaderamente son necesarias todas las categorías de colores que hay?
+```{r warning=FALSE, error=FALSE, message=FALSE}
+vehiculos %>% add_count(color_veh, color) %>% select(color_veh, color, n) %>% distinct() %>% arrange(color_veh)
+```
+```{r}
+read.csv("./Datasets/Normalizadas/color_veh.csv", encoding="UTF-8")
+```
+
+Se puede ver que ningún carro se clasifica como color "marfil", ya que por lo tanto esta se podría considerar innecesaria, o sustituible por "blanco." Ahora, rosado es el menos frecuente, pero por experiencia personal tampoco son muy abundantes. La interesante es la que concierne a vehículos de color turquesea, ya que hay tan pocos en los datos. Esto podría deberse a escacez de los mismos, o a que este color es fácil de confundir con el celeste.
+
 ¿Qué municipios tienen más instancias de ignorados respecto a zonas?
 ```{r warning=FALSE, error=FALSE, message=FALSE}
 hechos %>% filter(zona_ocu==99) %>% add_count(mupio_name, año_ocu) %>% select(mupio_name, año_ocu, n) %>% distinct() %>% arrange(desc(n))
@@ -220,15 +230,26 @@ fal_les %>% filter(zona_ocu!=99) %>% count()
 ```
 
 
-```{r error=FALSE, message=FALSE, warning=FALSE}
+```{r error=FALSE, warning=FALSE}
 v_y_h_names <- colnames(vehiculos_y_hechos_clean)
 v_y_h_names[12] <- "sexo_con" # sexo del conductor
 v_y_h_names[13] <- "edad_con" # sexo del conductor
 v_y_h_names[15] <- "mayor_menor_con" # sexo del conductor
 colnames(vehiculos_y_hechos_clean) <- v_y_h_names
 
-veh_hec_fal_les <- merge(vehiculos_y_hechos_clean, fal_les, all.x=T)
-veh_hec_fal_les %>% count()
+veh_hec_fal_les_all <- merge(vehiculos_y_hechos_clean, fal_les, all.x=T)
+veh_hec_fal_les <- merge(vehiculos_y_hechos_clean, fal_les)
+cat(sprintf("Filas de hechos y vehiculos involucrados = %s \nFilas de hechos, vehículos involucrados y fallecidos/lesionados (incluye hechos en los que no hubo fallecidos ni lesionados) = %s \nFilas de inner join (solo hechos con fallecidos y/o lesionados) = %s",vehiculos_y_hechos_clean %>% count(), veh_hec_fal_les_all %>% count() , veh_hec_fal_les %>% count()))
 ```
 
 Hemos terminado con únicamente 5283 datos que son posibles analizar, y esto ha sido el solo excluyendo zonas clasificadas como ignoraas, y hechos distinguibles con respecto a año, mes, día, hora, municipio, zona y tipo de evento.
+
+# Recomendaciones
+* ¿Las definiciones que menciona la INE son de conocimiento de quienes recopilan los datos? Si no, deberían, al igual que se deberían incluir las mismas en los respectivos diccionarios.
+* Hacer una más clara distinción de tipos de vehículos y colores de los mismos. Para esta última, reducir la cantidad de categorías, eliminando el color marfil y evaluando si sería mejor eliminar el turquesa.
+* Incluir un diccionario de las marcas.
+* Mejorar el sistema de manera que no hayan tantas zonas desconocidas. Valdría la pena almacenar al latitud y longitud para el mismo objetivo.
+* ¿Por qué se incluye la información de uno de los vehículos involucrados en la tabla de hechos? Esta información la considero innecesaria, ya que solo se debería registrar información pertinente al evento en sí y la ubicación del mismo.
+* Incluir en la tabla de Vehículos una columna que haga referencia al número de correlativo del hecho. También valdría la pena que el INE incluyera estas como tablas de relación, ya que un fallecido o lesionado de atropello no tendrá relación con la tabla de vehículos, pero sí con la de hechos; de hacer esto último, se podría ahorrarse el incluir en la tabla de fallecidos y lesionados la información del vehículo por lo tanto (sería así más fácil identificar peatones), y la informaciín del vehículo en la de hechos.
+* En fallecidos y lesionados se podría evaluar si sería valioso indicar si estos fueron los conductores o pasajeros de un vehículo.
+* Añadir en fallecidos y lesionados una columna indicando si la persona accidentada llevaba las debidas medidas de seguridad (cinturón o casco).
