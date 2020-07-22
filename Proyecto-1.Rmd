@@ -246,7 +246,7 @@ Hemos terminado con únicamente 5283 datos que son posibles analizar, y esto ha 
 
 # Recomendaciones
 * ¿Las definiciones que menciona la INE son de conocimiento de quienes recopilan los datos? Si no, deberían, al igual que se deberían incluir las mismas en los respectivos diccionarios.
-* Hacer una más clara distinción de tipos de vehículos y colores de los mismos. Para esta última, reducir la cantidad de categorías, eliminando el color marfil y evaluando si sería mejor eliminar el turquesa.
+* Hacer una más clara distinción de tipos de vehículos y colores de los mismos. Para esta última, reducir la cantidad de categorías, eliminando el color marfil y evaluando verdaderamente es valioso el turquesa/si quien recopila la información al momento del hecho sabría identificar el color de un carro como turquesa.
 * Incluir un diccionario de las marcas.
 * Mejorar el sistema de manera que no hayan tantas zonas desconocidas. Valdría la pena almacenar al latitud y longitud para el mismo objetivo.
 * ¿Por qué se incluye la información de uno de los vehículos involucrados en la tabla de hechos? Esta información la considero innecesaria, ya que solo se debería registrar información pertinente al evento en sí y la ubicación del mismo.
